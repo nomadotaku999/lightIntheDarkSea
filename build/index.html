@@ -116,6 +116,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   --lamp: #F0B24A;
   --lamp-glow: rgba(240, 178, 74, 0.22);
   --danger: #E0664C;
+  --warn: #F2D35B;
   --hp: #6FB39B;
   --mind: #8AA9DB;
   --serif: "Nanum Myeongjo", "Noto Serif KR", "AppleMyungjo", "Batang", serif;
@@ -161,7 +162,8 @@ img { max-width: 100%; }
 .loopno { color: var(--muted); font-variant-numeric: tabular-nums; }
 .gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 1rem; }
 .gauge { display: grid; grid-template-columns: 3.4em 1fr 2.2em; align-items: center; gap: 0.5rem; }
-.gauge.collapse { grid-column: 1 / -1; grid-template-columns: 3.4em 1fr 2.2em auto; }
+.gauge.collapse { grid-column: 1 / -1; grid-template-columns: 3.4em 1fr; }
+.col-text { color: var(--ink); }
 .g-label { color: var(--muted); }
 .g-num { text-align: right; font-variant-numeric: tabular-nums; }
 .bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
@@ -169,6 +171,8 @@ img { max-width: 100%; }
 .fill.hp { background: var(--hp); }
 .fill.mind { background: var(--mind); }
 .fill.col { background: var(--lamp); }
+.gauge.collapse[data-level="yellow"] .col-text { color: var(--warn); }
+.gauge.collapse[data-level="red"] .col-text { color: var(--danger); font-weight: 600; }
 .gauge.collapse[data-stage="2"] .fill.col,
 .gauge.collapse[data-stage="3"] .fill.col { background: var(--danger); }
 .stage { color: var(--lamp); font-weight: 500; }
@@ -983,10 +987,49 @@ setup.CTX_BONUS = {
 
 setup.STAGE_NEWS = [
   "",
-  "발목까지 찬 물이 복도를 따라 번져 간다. 어딘가에서 차단벽이 내려가는 소리가 들린다. (침수 확산)",
-  "벽이 길게 우는 소리를 낸다. 구간 엘리베이터들이 멈췄다는 안내 방송이 끊기듯 이어진다. (구조 손상)",
-  "천장 이음새에서 물줄기가 뿜어져 나온다. 시간이 거의 남지 않았다. (붕괴 임박)"
+  "발목까지 찬 물이 복도를 따라 번져 간다. 어딘가에서 차단벽이 내려가는 소리가 들린다.",
+  "벽이 길게 우는 소리를 낸다. 구간 엘리베이터들이 멈췄다는 안내 방송이 끊기듯 이어진다.",
+  "천장 이음새에서 물줄기가 뿜어져 나온다. 시간이 거의 남지 않았다."
 ];
+
+/* 붕괴도 구간별 상단 표시 문장: 턴이 지날 때마다 그 구간에서 하나를 고른다 */
+setup.COLLAPSE_TEXT = [
+  { max: 25, lines: [
+    "경보음이 멎지 않는다.",
+    "멀리서 쿵, 하는 소리가 한 번 울렸다.",
+    "비상등이 규칙적으로 깜빡인다.",
+    "발밑이 아주 잠깐 흔들린 것 같다.",
+    "안내 방송이 같은 말을 되풀이한다."
+  ] },
+  { max: 50, lines: [
+    "어딘가에서 차폐벽이 내려가는 소리가 난다.",
+    "벽 너머로 묵직한 진동이 지나간다.",
+    "배관이 길게 떨리는 소리가 들린다.",
+    "천장 조명이 미세하게 흔들린다.",
+    "멀리서 금속이 부딪히는 소리가 이어진다."
+  ] },
+  { max: 80, lines: [
+    "벽이 낮게 울고 있다.",
+    "바닥을 타고 진동이 올라온다.",
+    "금속이 휘는 소리가 길게 이어진다.",
+    "가까운 곳에서 차폐벽이 쾅 닫혔다.",
+    "조명이 몇 초씩 꺼졌다 켜진다."
+  ] },
+  { max: 101, lines: [
+    "기지 전체가 신음하듯 삐걱댄다.",
+    "발밑이 크게 출렁였다.",
+    "어디선가 무언가 무너지는 굉음이 들렸다.",
+    "진동이 멈추지 않는다.",
+    "귀가 먹먹할 만큼 벽이 울린다."
+  ] }
+];
+
+setup.rollCollapseText = function () {
+  const r = V().run;
+  const bands = setup.COLLAPSE_TEXT;
+  const band = bands.find(b => r.collapse < b.max) || bands[bands.length - 1];
+  r.collapseText = setup.pick(band.lines);
+};
 
 setup.HAZARDS = [
   { stat: "agi", dmg: 12, hit: "천장 패널이 떨어져 어깨를 스쳤다.", dodge: "머리 위에서 패널이 떨어졌다. 간발의 차로 피했다." },
@@ -1531,7 +1574,7 @@ $(document).one(&quot;:passagedisplay&quot;, function () {
 &lt;&lt;btn `setup.TEAMS[_t].ko + &quot; &quot; + setup.TEAMS[_t].nat` `$create.team === _t ? &quot;on&quot; : &quot;&quot;`&gt;&gt;&lt;&lt;set $create.team to _t&gt;&gt;&lt;&lt;replace &quot;#cc&quot;&gt;&gt;&lt;&lt;include &quot;생성_본문&quot;&gt;&gt;&lt;&lt;/replace&gt;&gt;&lt;&lt;/btn&gt;&gt;
 &lt;&lt;/capture&gt;&gt;&lt;&lt;/for&gt;&gt;
 &lt;/div&gt;
-&lt;p class=&quot;hint&quot;&gt;팀마다 능력 차이는 없어요. 다른 팀 사람들이 당신을 대하는 첫인상만 달라져요.&lt;/p&gt;
+&lt;p class=&quot;hint&quot;&gt;팀마다 능력의 차이는 없습니다. 하지만 다른 팀 사람들이 당신을 대하는 첫인상이 다를 수 있습니다.&lt;/p&gt;
 &lt;/div&gt;
 &lt;&lt;elseif $create.job&gt;&gt;
 &lt;div class=&quot;field&quot;&gt;
@@ -1618,7 +1661,7 @@ setTimeout(function () {
 &lt;div class=&quot;gauges&quot;&gt;
 &lt;div class=&quot;gauge&quot;&gt;&lt;span class=&quot;g-label&quot;&gt;체력&lt;/span&gt;&lt;span class=&quot;bar&quot;&gt;&lt;span class=&quot;fill hp&quot; @style=&quot;&#39;width:&#39; + $run.hp + &#39;%&#39;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;g-num&quot;&gt;&lt;&lt;= $run.hp&gt;&gt;&lt;/span&gt;&lt;/div&gt;
 &lt;div class=&quot;gauge&quot;&gt;&lt;span class=&quot;g-label&quot;&gt;정신력&lt;/span&gt;&lt;span class=&quot;bar&quot;&gt;&lt;span class=&quot;fill mind&quot; @style=&quot;&#39;width:&#39; + $run.mental + &#39;%&#39;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;g-num&quot;&gt;&lt;&lt;= $run.mental&gt;&gt;&lt;/span&gt;&lt;/div&gt;
-&lt;div class=&quot;gauge collapse&quot; @data-stage=&quot;setup.stageIdx()&quot;&gt;&lt;span class=&quot;g-label&quot;&gt;붕괴도&lt;/span&gt;&lt;span class=&quot;bar&quot;&gt;&lt;span class=&quot;fill col&quot; @style=&quot;&#39;width:&#39; + $run.collapse + &#39;%&#39;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;g-num&quot;&gt;&lt;&lt;= Math.floor($run.collapse)&gt;&gt;&lt;/span&gt;&lt;span class=&quot;stage&quot;&gt;&lt;&lt;= setup.stageName()&gt;&gt;&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&quot;gauge collapse&quot; @data-level=&quot;$run.collapse &gt;= 80 ? &#39;red&#39; : ($run.collapse &gt;= 50 ? &#39;yellow&#39; : &#39;calm&#39;)&quot;&gt;&lt;span class=&quot;g-label&quot;&gt;기지&lt;/span&gt;&lt;span class=&quot;col-text&quot;&gt;&lt;&lt;= $run.collapseText || setup.stageName()&gt;&gt;&lt;/span&gt;&lt;/div&gt;
 &lt;/div&gt;
 &lt;nav class=&quot;hud-menu&quot;&gt;
 &lt;&lt;btn &quot;기억&quot;&gt;&gt;&lt;&lt;run setup.openDialog(&quot;박무현이 기억하는 것들&quot;, &quot;기억&quot;)&gt;&gt;&lt;&lt;/btn&gt;&gt;

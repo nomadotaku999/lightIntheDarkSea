@@ -8,7 +8,7 @@
 <div class="gauges">
 <div class="gauge"><span class="g-label">체력</span><span class="bar"><span class="fill hp" @style="'width:' + $run.hp + '%'"></span></span><span class="g-num"><<= $run.hp>></span></div>
 <div class="gauge"><span class="g-label">정신력</span><span class="bar"><span class="fill mind" @style="'width:' + $run.mental + '%'"></span></span><span class="g-num"><<= $run.mental>></span></div>
-<div class="gauge collapse" @data-stage="setup.stageIdx()"><span class="g-label">붕괴도</span><span class="bar"><span class="fill col" @style="'width:' + $run.collapse + '%'"></span></span><span class="g-num"><<= Math.floor($run.collapse)>></span><span class="stage"><<= setup.stageName()>></span></div>
+<div class="gauge collapse" @data-level="$run.collapse >= 80 ? 'red' : ($run.collapse >= 50 ? 'yellow' : 'calm')"><span class="g-label">기지</span><span class="col-text"><<= $run.collapseText || setup.stageName()>></span></div>
 </div>
 <nav class="hud-menu">
 <<btn "기억">><<run setup.openDialog("박무현이 기억하는 것들", "기억")>><</btn>>

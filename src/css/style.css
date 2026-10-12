@@ -10,6 +10,7 @@
   --lamp: #F0B24A;
   --lamp-glow: rgba(240, 178, 74, 0.22);
   --danger: #E0664C;
+  --warn: #F2D35B;
   --hp: #6FB39B;
   --mind: #8AA9DB;
   --serif: "Nanum Myeongjo", "Noto Serif KR", "AppleMyungjo", "Batang", serif;
@@ -55,7 +56,8 @@ img { max-width: 100%; }
 .loopno { color: var(--muted); font-variant-numeric: tabular-nums; }
 .gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 1rem; }
 .gauge { display: grid; grid-template-columns: 3.4em 1fr 2.2em; align-items: center; gap: 0.5rem; }
-.gauge.collapse { grid-column: 1 / -1; grid-template-columns: 3.4em 1fr 2.2em auto; }
+.gauge.collapse { grid-column: 1 / -1; grid-template-columns: 3.4em 1fr; }
+.col-text { color: var(--ink); }
 .g-label { color: var(--muted); }
 .g-num { text-align: right; font-variant-numeric: tabular-nums; }
 .bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
@@ -63,6 +65,8 @@ img { max-width: 100%; }
 .fill.hp { background: var(--hp); }
 .fill.mind { background: var(--mind); }
 .fill.col { background: var(--lamp); }
+.gauge.collapse[data-level="yellow"] .col-text { color: var(--warn); }
+.gauge.collapse[data-level="red"] .col-text { color: var(--danger); font-weight: 600; }
 .gauge.collapse[data-stage="2"] .fill.col,
 .gauge.collapse[data-stage="3"] .fill.col { background: var(--danger); }
 .stage { color: var(--lamp); font-weight: 500; }
