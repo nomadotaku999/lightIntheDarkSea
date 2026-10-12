@@ -1,0 +1,169 @@
+:: 시작 [noheader title nobr]
+<div class="title-wrap">
+<div class="lamp" aria-hidden="true"></div>
+<h1 class="game-title">어두운 바다의<br>등불이 되어</h1>
+<p class="subtitle">수심 3,000m, 제4해저기지. 비공식 팬게임.</p>
+</div>
+
+<div class="slots">
+<<for _s range setup.slots()>><<capture _s>>
+<div class="slot">
+<<if _s.info>>
+<div class="slot-info"><span class="slot-name"><<= _s.info.metadata.name>></span><span class="slot-meta"><<= _s.info.metadata.job>>, <<= _s.info.metadata.loop>>회차<<if _s.info.metadata.finished>>, 탈출함<</if>></span></div>
+<div class="slot-btns"><<btn "이어하기" "primary">><<run setup.loadSlot(_s.index)>><</btn>><<btn "지우기" "quiet">><<run if (confirm(_s.info.metadata.name + "의 기록을 지울까요? 되돌릴 수 없어요.")) { Save.browser.slot.delete(_s.index); Engine.show(); }>><</btn>></div>
+<<else>>
+<div class="slot-info"><span class="slot-empty">빈 슬롯</span></div>
+<div class="slot-btns"><<btn "새 캐릭터">><<run setup.newCreate(_s.index)>><<goto "캐릭터생성">><</btn>></div>
+<</if>>
+</div>
+<</capture>><</for>>
+</div>
+
+<details class="fold">
+<summary>저장 코드나 파일 불러오기</summary>
+<p>다른 기기에서 내보낸 기록을 빈 슬롯으로 가져옵니다.</p>
+<textarea id="import-code" class="code" placeholder="저장 코드를 붙여 넣으세요"></textarea>
+<div class="row"><<btn "코드로 불러오기" "primary">><<run setup.importCode(document.getElementById("import-code").value)>><</btn>>
+<label class="btn file-btn">파일 선택<input type="file" id="import-file" accept=".save,.txt,*" hidden></label></div>
+</details>
+
+<details class="fold">
+<summary>이 게임에 대해</summary>
+<<include "게임안내">>
+</details>
+
+<<script>>
+$(document).one(":passagedisplay", function () {
+  $("#import-file").on("change", function (ev) { setup.importFile(ev); });
+});
+<</script>>
+
+:: 게임안내 [nobr]
+<p>본 게임은 웹소설 「어두운 바다의 등불이 되어」를 바탕으로 한 비공식 팬게임입니다. 제작자와 원작은 무관하며, 영리적 이득을 취하기 위한 목적으로 제작된 것이 아님을 밝힙니다.</p>
+<p>본 게임은 웹소설 「어두운 바다의 등불이 되어」의 강력한 스포일러를 포함하고 있음을 사전에 밝힙니다.</p>
+<p>당신은 제4해저기지에서 일하던 평범한 직원입니다. 5월 31일, 당신은 정체불명의 진동을 느끼며 불쾌한 상태로 숙소에서 눈을 뜹니다. 목표는 단 하나, 살아서 대한도의 해변에 닿는 것.</p>
+<p>당신이 죽으면 해당 회차는 종료됩니다. 당신은 아무것도 기억하지 못하지만, 누군가는 사라진 과거를 기억하고 있을 수 있습니다. 그에게 전했거나 그와 함께 본 것만이 다음 회차로 이어집니다. 다른 사람과 함께하는 것을 저어하지 마십시오.</p>
+<p>행동은 자동으로 저장되고, 돌이킬 수 없습니다. 다른 기기로 데이터를 옮길 때는 게임 안의 '기록 관리'에서 저장 코드를 복사해 두십시오.</p>
+<p>본 게임에는 원작에 없는 사건이 발생할 수 있으며, 원작에 없던 설정이 있을 수 있습니다. 본 게임은 원작의 결말과 후반부 전개에 관한 강한 스포일러를 포함하고 있음을 재차 안내드립니다.</p>
+
+:: 캐릭터생성 [noheader nobr]
+<h2 class="page-title">당신은 누구였나</h2>
+<p class="lede">제4해저기지에서 일하던 사람. 오늘 밤 이전의 일은 평범했다.</p>
+
+<div class="field">
+<label for="textbox-createname">이름</label>
+<<textbox "$create.name" "" autofocus>>
+</div>
+
+<div id="cc"><<include "생성_본문">></div>
+<div id="cc-err" class="err" role="alert"></div>
+<div class="row end">
+<<btn "처음 화면으로" "quiet">><<run setup.init()>><<goto "시작">><</btn>>
+<<btn "이 사람으로 시작한다" "primary">><<set _err to setup.createReady()>><<if _err>><<replace "#cc-err">>_err<</replace>><<else>><<run setup.startGame(); setup.go("회차시작", {turns: 0})>><</if>><</btn>>
+</div>
+
+:: 생성_본문 [nobr]
+<div class="field">
+<span class="label">직군</span>
+<div class="seg">
+<<for _j range ["eng","sci","min","spc"]>><<capture _j>>
+<<btn setup.JOBS[_j].ko `$create.job === _j ? "on" : ""`>><<set $create.job to _j>><<set $create.team to null>><<set $create.nat to null>><<run setup.STATS.forEach(k => $create.pts[k] = 0)>><<replace "#cc">><<include "생성_본문">><</replace>><</btn>>
+<</capture>><</for>>
+</div>
+</div>
+<<if $create.job === "eng">>
+<div class="field">
+<span class="label">소속 팀</span>
+<div class="seg wrap">
+<<for _t range Object.keys(setup.TEAMS)>><<capture _t>>
+<<btn `setup.TEAMS[_t].ko + " " + setup.TEAMS[_t].nat` `$create.team === _t ? "on" : ""`>><<set $create.team to _t>><<replace "#cc">><<include "생성_본문">><</replace>><</btn>>
+<</capture>><</for>>
+</div>
+<p class="hint">팀마다 능력의 차이는 없습니다. 하지만 다른 팀 사람들이 당신을 대하는 첫인상이 다를 수 있습니다.</p>
+</div>
+<<elseif $create.job>>
+<div class="field">
+<span class="label">국적</span>
+<div class="seg wrap">
+<<for _n range setup.NATIONS>><<capture _n>>
+<<btn _n `$create.nat === _n ? "on" : ""`>><<set $create.nat to _n>><<replace "#cc">><<include "생성_본문">><</replace>><</btn>>
+<</capture>><</for>>
+</div>
+</div>
+<</if>>
+<<if $create.job>>
+<div class="field">
+<span class="label">능력치 <span class="pts">남은 포인트 <<= setup.createLeft()>></span></span>
+<div class="stat-grid">
+<<for _k range setup.STATS>><<capture _k>>
+<div class="stat-row"><span class="stat-name"><<= setup.STAT_KO[_k]>></span><span class="stat-val"><<= setup.createStat(_k)>></span>
+<<btn "−" "mini">><<run setup.createAdj(_k, -10)>><<replace "#cc">><<include "생성_본문">><</replace>><</btn>>
+<<btn "+" "mini">><<run setup.createAdj(_k, 10)>><<replace "#cc">><<include "생성_본문">><</replace>><</btn>>
+</div>
+<</capture>><</for>>
+</div>
+<p class="hint">10씩 나눠 줄 수 있고, 한 능력치는 80을 넘을 수 없어요. 체력과 정신력은 모두 100에서 시작해요.</p>
+</div>
+<</if>>
+
+:: 기억 [dialog nobr]
+<<set _m to $meta>>
+<<set _ids to Object.keys(_m.memory).filter(id => id !== "player")>>
+<p class="lede">회차를 건너 이어지는 것은 그의 기억뿐이다.</p>
+<h3>당신에게서 전해 들었거나, 당신과 함께 본 것</h3>
+<<if _ids.length>><ul class="mem">
+<<for _id range _ids>><li><span class="tag"><<= setup.FACTS[_id].cat>></span><<= setup.FACTS[_id].text>></li><</for>>
+</ul><<else>><p class="muted">아직 아무것도 없다.</p><</if>>
+<h3>그가 처음부터 알고 있던 것</h3>
+<p class="muted small">여러 번의 루프를 먼저 겪은 그가 알고 있는 것. 지친 회차에는 일부를 떠올리지 못한다.</p>
+<ul class="mem">
+<<for _id range setup.PARK_BASE>><li @class="$run && $run.park.forgot.includes(_id) ? 'dim' : ''"><span class="tag"><<= setup.FACTS[_id].cat>></span><<= setup.FACTS[_id].text>></li><</for>>
+</ul>
+<h3>구해 낸 사람들</h3>
+<<set _rs to Object.keys(_m.rescued)>>
+<<if _rs.length>><p><<= _rs.map(id => setup.PEOPLE[id] + " (" + _m.rescued[id] + "회차)").join(", ")>></p><<else>><p class="muted">아직 없다.</p><</if>>
+<h3>박무현이 기억하는 회차들</h3>
+<<if _m.history.length>><ol class="hist">
+<<for _h range _m.history>><li><<if _h.parkMet>><<= setup.histLine(_h)>><<else>>그 회차에 박무현은 당신을 만나지 못했다.<</if>></li><</for>>
+</ol><<else>><p class="muted">첫 번째 회차.</p><</if>>
+
+:: 소지품 [dialog nobr]
+<h3>동행</h3>
+<<set _c to setup.companions()>>
+<<if _c.length>><ul class="plain">
+<<if _c.includes("park")>><li>박무현. <<if $run.park.conds.length>><<= $run.park.conds.join(" ")>><<else>>겉보기엔 멀쩡하다.<</if>> <<= $run.park.mental < 55 ? "눈빛이 몹시 지쳐 있다." : "침착하다.">></li><</if>>
+<<if _c.includes("henry")>><li>헨리. <<= $run.henry === "park" ? "박무현의 등에 업혀 있다." : "당신의 등에 업혀 있다. 몸이 무거워 움직임이 굼떠진다.">></li><</if>>
+<<if _c.includes("gayoung")>><li>김가영. 왼쪽 발목을 조금 절지만 걸음은 빠르다.</li><</if>>
+</ul><<else>><p class="muted">혼자다.</p><</if>>
+<h3>소지품</h3>
+<ul class="plain">
+<li>개인 단말. 기지 게시판을 볼 수 있다.</li>
+<<if $run.items.medkit>><li>구급상자. 딥 블루에서 챙겼다.</li><</if>>
+<<if $run.items.pad>><li>엔지니어 총괄 패드. 잠긴 문과 차단벽을 다룰 수 있다.</li><</if>>
+</ul>
+<h3>능력치</h3>
+<div class="stat-grid ro">
+<<for _k range setup.STATS>><div class="stat-row"><span class="stat-name"><<= setup.STAT_KO[_k]>></span><span class="stat-val"><<= $char.stats[_k]>></span></div><</for>>
+</div>
+
+:: 기록관리 [dialog nobr]
+<p>행동할 때마다 이 브라우저에 자동으로 저장돼요. 다른 기기로 옮기거나 백업하려면 아래 중 하나를 쓰세요.</p>
+<div class="row">
+<<btn "저장 코드 만들기" "primary">><<run jQuery("#exp-code").empty().append(jQuery("<textarea class='code' readonly>").val(setup.exportCode()))>><</btn>>
+<<btn "파일로 내려받기">><<run setup.exportFile()>><</btn>>
+</div>
+<div id="exp-code"></div>
+<p class="muted small">저장 코드는 전부 복사해서 보관하세요. 처음 화면의 '불러오기'에 붙여 넣으면 빈 슬롯으로 들어와요.</p>
+<h3>설정</h3>
+<label class="check"><input type="checkbox" id="odds-toggle"> 선택지 옆에 성공 확률을 숫자로 표시</label>
+<div class="row end">
+<<btn "처음 화면으로" "quiet">><<run Dialog.close(); setup.init(); Engine.play("시작")>><</btn>>
+</div>
+<<script>>
+setTimeout(function () {
+  var t = document.getElementById("odds-toggle");
+  if (!t) return;
+  t.checked = !!settings.showOdds;
+  t.addEventListener("change", function () { settings.showOdds = t.checked; Setting.save(); });
+}, 0);
+<</script>>

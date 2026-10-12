@@ -1,0 +1,141 @@
+:: 상태표시 [nobr]
+<<if $run>>
+<header class="hud">
+<div class="hud-top">
+<span class="who"><<= $char.name>> <span class="muted"><<= setup.jobLabel()>></span></span>
+<span class="loopno"><<= $meta.loop>>회차</span>
+</div>
+<div class="gauges">
+<div class="gauge"><span class="g-label">체력</span><span class="bar"><span class="fill hp" @style="'width:' + $run.hp + '%'"></span></span><span class="g-num"><<= $run.hp>></span></div>
+<div class="gauge"><span class="g-label">정신력</span><span class="bar"><span class="fill mind" @style="'width:' + $run.mental + '%'"></span></span><span class="g-num"><<= $run.mental>></span></div>
+<div class="gauge collapse" @data-stage="setup.stageIdx()"><span class="g-label">붕괴도</span><span class="bar"><span class="fill col" @style="'width:' + $run.collapse + '%'"></span></span><span class="g-num"><<= Math.floor($run.collapse)>></span><span class="stage"><<= setup.stageName()>></span></div>
+</div>
+<nav class="hud-menu">
+<<btn "기억">><<run setup.openDialog("박무현이 기억하는 것들", "기억")>><</btn>>
+<<btn "소지품·동행">><<run setup.openDialog("소지품과 동행", "소지품")>><</btn>>
+<<if passage() === "탐사">><<btn "게시판">><<run setup.go("게시판", {turns: 0})>><</btn>><</if>>
+<<btn "기록 관리">><<run setup.openDialog("기록 관리", "기록관리")>><</btn>>
+</nav>
+</header>
+<<if $run.check>><p class="check-result" @data-ok="$run.check.ok"><<= setup.STAT_KO[$run.check.stat]>> 판정 <<= $run.check.p>>%, <<= $run.check.ok ? "성공" : "실패">></p><</if>>
+<<if $run.news.length>><div class="news"><<for _n range $run.news>><p><<= _n>></p><</for>></div><</if>>
+<</if>>
+
+:: 회차시작
+<<set _home to setup.homeLoc()>>\
+<p class="date">5월 31일</p>
+
+<<if _home === "jj_hall">>\
+경보음이 연구센터의 두꺼운 벽을 뚫고 들어온다. 주작동 숙소 <<= $char.room>>호, 책상 위에 펼쳐 둔 논문 위로 컵이 쓰러져 있다. 발밑이 차갑다. 문틈으로 물이 스며들고 있다.
+
+<<elseif _home === "cr_hall">>\
+누군가 복도에서 중국어로 욕을 하며 뛰어간다. 청룡동 숙소 <<= $char.room>>호. 비상등이 켜진 방 안은 온통 붉다. 벽 너머에서 금속이 비틀리는 소리가 길게 이어진다.
+
+<<else>>\
+백호동 숙소 <<= $char.room>>호. 경보음에 눈을 떴다. 침대 옆 원형 창 너머로, 늘 수십 가지 색으로 빛나던 연구센터의 불빛이 하나둘 꺼져 가는 게 보인다.
+
+<</if>>
+
+안내 방송이 몇 개 국어로 같은 말을 되풀이한다. 외부 충격 감지. 모든 직원은 가까운 탈출정 포트로 이동할 것.
+
+<<if $meta.loop > 1>>\
+<p class="deja">문손잡이를 잡는 순간, 이 차가운 감촉을 전에도 느낀 적이 있는 것 같다는 생각이 스친다. 그럴 리가 없다.</p>
+
+<</if>>\
+<div class="choices"><<go "방을 나선다" "탐사" 0>></div>
+
+:: 탐사 [nobr]
+<div class="loc-head"><span class="area"><<= setup.LOCS[$run.loc].area>></span><h2 class="loc-name"><<= setup.LOCS[$run.loc].name>></h2></div>
+<<include `"장소_" + $run.loc`>>
+<<include "동행문장">>
+<<set _acts to setup.actionsHere()>><<set _com to setup.commonHere()>>
+<div class="choices">
+<<for _a range _acts>><<go _a.label _a.target _a.turns>><</for>>
+<<for _a range _com>><<go _a.label _a.target _a.turns>><</for>>
+</div>
+<h3 class="sub">어디로 갈까</h3>
+<div class="choices moves">
+<<for _m range setup.movesHere()>><<go `_m.name + (_m.cost > 1 ? " (먼 길)" : "")` "탐사" _m.cost _m.id>><</for>>
+</div>
+
+:: 동행문장 [nobr]
+<<set _c to setup.companions()>>
+<<if _c.includes("park")>><p class="with">박무현이 곁에 있다.<<if _c.includes("henry") && $run.henry === "park">> 그의 등에서 헨리가 고개를 묻고 있다.<</if>><<if _c.includes("gayoung")>> 김가영이 한 발 앞서 걷는다.<</if>></p>
+<<elseif _c.length>><p class="with"><<if _c.includes("henry")>>등에 업힌 헨리의 숨이 목덜미에 닿는다.<</if>><<if _c.includes("gayoung")>> 김가영이 곁에 있다.<</if>></p><</if>>
+
+:: 게시판 [nobr]
+<h2 class="page-title">기지 게시판</h2>
+<p class="muted">개인 단말에 뜬 게시판. 글이 올라오는 속도가 평소보다 훨씬 빠르다.</p>
+<div class="board">
+<<for _b range $run.board>>
+<article class="post"><h4><<= setup.BOARD[_b].title>></h4><p class="post-author"><<= setup.BOARD[_b].author>></p><p><<= setup.boardBody(_b)>></p></article>
+<</for>>
+</div>
+<p class="muted small">게시판의 글이 모두 사실이라는 보장은 없다.</p>
+<div class="choices"><<go "단말을 내려놓는다" "탐사" 0>></div>
+
+:: 장소_bh_hall [nobr]
+<<if setup.stageIdx() < 2>>
+백호동 숙소 복도. 80개의 방이 양옆으로 늘어서 있고, 비상등이 주황빛 줄을 긋는다. 반쯤 열린 문들 사이로 사람들이 짐도 없이 뛰쳐나간다. 40호 옆 중앙계단 쪽에서 누군가 이름을 부르는 소리가 난다.
+<<else>>
+백호동 숙소 복도에 물이 무릎까지 찼다. 떠다니는 슬리퍼와 서류 사이로, 닫힌 채인 문 몇 개가 보인다. 그 안에 아직 사람이 있을지도 모른다.
+<</if>>
+
+:: 장소_bh_port [nobr]
+<<if setup.stageIdx() < 2>>
+백호동 탈출정 포트. 붉은 탈출정 캡슐들이 벽을 따라 줄지어 있다. 몇 개는 이미 사출돼 빈 구멍만 남았다. 줄을 선 사람들의 얼굴이 하얗다.
+<<else>>
+백호동 탈출정 포트. 남은 캡슐이 얼마 없다. 초록불이 들어온 것과 꺼진 것이 뒤섞여 있다.
+<</if>>
+
+:: 장소_bh_corridor [nobr]
+백호동에서 중앙동으로 이어지는 복도. 벽에는 일정한 간격으로 쇠손잡이가 박혀 있다. <<if $run.done.arr_kevin>>그 자리를 지날 때마다 걸음이 느려진다.<</if>>
+
+:: 장소_jc_plaza [nobr]
+<<if $run.turn >= $run.cult.active>>
+중앙동 중앙휴게실. 누군가 벽과 기둥에 짙은 청색 천을 드리워 놓았다. 사람들이 몰려 있지만, 몇몇은 도망치는 기색 없이 천 아래에 조용히 서 있다.
+<<else>>
+중앙동 중앙휴게실. 무료 과자 자판기가 쓰러져 있고, 사람들이 엘리베이터 쪽과 각 동 쪽으로 갈라져 뛰어간다. 영화관 쪽에서 아이를 찾는 목소리가 들린다.
+<</if>>
+
+:: 장소_jc_elev [nobr]
+중앙 엘리베이터 앞. 투명한 벽 너머로 수직 통로가 끝없이 위로 뻗어 있다. 백 명은 탈 수 있다는 넓은 칸이 지금은 텅 비어 있다. <<if setup.stageIdx() >= 2>>호출 패널이 붉게 깜박인다. 운행 정지.<</if>>
+
+:: 장소_jc_dental [nobr]
+치과 딥 블루. 입구의 거대한 상어 머리뼈 모형이 기울어져 있다. 진료실 유니트 체어 위로 조명이 혼자 켜져 있다. <<if $run.park.state === "with">>박무현이 잠깐 진료실을 둘러본다. 아무 말도 하지 않는다.<</if>>
+
+:: 장소_jj_hall [nobr]
+주작동 숙소 복도. 연구원들의 방이 모인 곳이라 문마다 이름표 대신 연구실 번호가 붙어 있다. <<if $run.gayoung === "trapped">>경보가 울리면 강제로 열렸어야 할 문들 가운데, 몇몇은 아직 닫혀 있다.<</if>>
+
+:: 장소_jj_lab [nobr]
+주작동 연구센터. 수조와 분석 장비들 사이로 청색 불빛이 흔들린다. 안쪽 끝에 화물 엘리베이터의 두꺼운 문이 있다.
+
+:: 장소_jj_port [nobr]
+주작동 탈출정 포트. 연구원들이 수조에서 꺼낸 표본 상자를 끌어안은 채 줄을 서 있다.
+
+:: 장소_cr_bridge [nobr]
+청룡동으로 곧게 뻗은 다리 모양의 통로. 양옆 원형 창 너머는 완전한 어둠이다. <<if setup.stageIdx() >= 1>>발밑에서 통로 전체가 미세하게 떨린다.<</if>>
+
+:: 장소_cr_hall [nobr]
+청룡동 숙소 복도. 벽과 천장에 온갖 포스터와 낙서가 붙어 있다. 누가 붙였는지 모를 동아리 모집 공고가 물에 젖어 흘러내린다.
+
+:: 장소_cr_life [nobr]
+청룡동 생명유지장치실. 거대한 장비의 경고등이 전부 붉다. 계기판의 글자는 러시아어다. <<if $run.done.life>>장비가 낮게, 규칙적으로 돌아가고 있다.<</if>>
+
+:: 장소_cr_port [nobr]
+청룡동 탈출정 포트. 엔지니어들이 서로 고함을 지르며 캡슐 순서를 정하고 있다.
+
+:: 장소_cr_elev [nobr]
+청룡동 엘리베이터. 해양생물 홀로그램 스티커가 빼곡한 칸. 제3해저기지로 이어진다. 거기서 아르켈론을 타고 제2기지, 제1기지를 거쳐 대한도까지 올라가야 한다.
+
+:: 장소_hm_plaza [nobr]
+현무동 휴게광장. 바닥부터 천장까지 야광 그림과 낙서로 뒤덮여 있다. 거북이가 뱀을 업고 가는 천장화 아래로 채굴 로봇 여러 대가 멈춰 서 있다. 오래된 건물답게 곳곳에서 물이 샌다.
+
+:: 장소_hm_pump [nobr]
+현무동 배수 펌프실. 자동 제어반은 먹통이다. 벽에 커다란 수동 레버가 붙어 있다. <<if $run.done.pump>>레버를 돌려 둔 펌프가 힘겹게 물을 퍼내고 있다.<</if>>
+
+:: 장소_hm_port [nobr]
+현무동 탈출정 포트. 75정이 있던 자리의 대부분이 이미 비어 있다. 남은 캡슐 앞으로 채굴팀 사람들이 모여든다.
+
+:: 장소_hm_elev [nobr]
+현무동 엘리베이터. 제3해저기지로 올라가는 구간 엘리베이터 가운데 하나다.

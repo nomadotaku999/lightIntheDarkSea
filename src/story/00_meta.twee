@@ -1,0 +1,19 @@
+:: StoryTitle
+어두운 바다의 등불이 되어 — 3,000m
+
+:: StoryData
+{
+  "ifid": "564B704B-7A89-4054-A8A8-9A56E9D347DB",
+  "format": "SugarCube",
+  "format-version": "2.37.3",
+  "start": "시작"
+}
+
+:: StoryInit
+<<run setup.init()>>
+
+:: PassageHeader
+<<if !tags().includes("noheader")>><<include "상태표시">><</if>>
+
+:: PassageDone
+<<run setup.afterRender()>>
